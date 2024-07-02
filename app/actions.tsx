@@ -9,19 +9,23 @@ const prisma = new PrismaClient();
 
 export async function continueConversation(
   messages: CoreMessage[],
-  sessionId: string,
-  order: number
+  sessionId: string
 ) {
+  await prisma.message.create({
+    data: {
+      message_content: JSON.stringify(messages[0].content),
+      sessionId,
+    },
+  });
   const result = await streamText({
     model: google("models/gemini-1.5-flash-latest"),
     messages,
-    onFinish({ text }) {
-      prisma.message.create({
+    async onFinish({ text }) {
+      await prisma.message.create({
         data: {
-          content: text,
+          message_content: text,
           isAi: true,
           sessionId,
-          order,
         },
       });
     },
