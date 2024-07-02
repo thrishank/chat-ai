@@ -1,17 +1,29 @@
 "use client";
 
 import { type CoreMessage } from "ai";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { continueConversation } from "./actions";
 import { readStreamableValue } from "ai/rsc";
+import { PrismaClient } from "@prisma/client";
+import axios from "axios";
 
 // Force the page to be dynamic and allow streaming responses up to 30 seconds
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
+const prisma = new PrismaClient();
+
 export default function Chat() {
   const [messages, setMessages] = useState<CoreMessage[]>([]);
   const [input, setInput] = useState("");
+  const [sessionId, setSessionId] = useState("");
+
+  useEffect(() => {
+    axios.get("/api/session").then((res) => {
+      setSessionId(res.data.id);
+      axios.get("/api/session/history")
+    });
+  }, []);
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
@@ -23,7 +35,7 @@ export default function Chat() {
     setMessages(newMessages);
     setInput("");
 
-    const result = await continueConversation(newMessages);
+    const result = await continueConversation(newMessages, sessionId, 1);
     for await (const content of readStreamableValue(result.message)) {
       setMessages([
         ...newMessages,
@@ -40,6 +52,12 @@ export default function Chat() {
         <div key={i} className="whitespace-pre-wrap">
           {m.role === "user" ? "User: " : "AI: "}
           {m.content as string}
+          {m.role === "assistant" && (
+            <div className="inline-block ml-2">
+              <button className="mr-2">👍</button>
+              <button>👎</button>
+            </div>
+          )}
         </div>
       ))}
 
