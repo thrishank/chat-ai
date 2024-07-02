@@ -11,5 +11,5 @@ export async function continueConversation(messages: CoreMessage[]) {
   });
 
   const stream = createStreamableValue(result.textStream);
-  return stream.value;
+  return {message: stream.value};
 }
