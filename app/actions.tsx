@@ -11,7 +11,7 @@ export async function continueConversation(
   messages: CoreMessage[],
   sessionId: string
 ) {
-  await prisma.message.create({
+  const msg = await prisma.message.create({
     data: {
       message_content: JSON.stringify(messages[0].content),
       sessionId,
@@ -32,5 +32,5 @@ export async function continueConversation(
   });
 
   const stream = createStreamableValue(result.textStream);
-  return { message: stream.value };
+  return { message: stream.value, id: msg.id };
 }

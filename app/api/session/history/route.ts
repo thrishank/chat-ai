@@ -15,3 +15,14 @@ export async function POST(req: Request) {
     return Response.json(err, { status: 400 });
   }
 }
+
+export async function GET() {
+  try {
+    const session = await prisma.session.findMany();
+    session.reverse();
+    return Response.json(session);
+  } catch (err) {
+    console.log(err);
+    return Response.json(err, { status: 400 });
+  }
+}
