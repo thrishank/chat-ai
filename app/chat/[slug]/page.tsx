@@ -2,7 +2,6 @@
 
 import { type CoreMessage } from "ai";
 import { useEffect, useState } from "react";
-
 import { readStreamableValue } from "ai/rsc";
 import { useParams } from "next/navigation";
 import axios from "axios";
@@ -18,6 +17,10 @@ interface typeHistory {
   id: number;
   message_content: string;
   isAi: boolean;
+  feedback: {
+    id: number;
+    isLiked: boolean;
+  };
 }
 type ExtendedMessage = CoreMessage & {
   id?: number;
@@ -71,10 +74,12 @@ export default function Chat() {
   const handleFeedback = async (messageId: number, isLiked: boolean) => {
     try {
       await axios.post("/api/feedback", { body: { messageId, isLiked } });
-      // Update the local state to reflect the feedback
-      setMessages(prevMessages => prevMessages.map(m => 
-        m.id === messageId ? { ...m, feedback: isLiked } : m
-      ));
+
+      setMessages((prevMessages) =>
+        prevMessages.map((m) =>
+          m.id === messageId ? { ...m, feedback: isLiked } : m
+        )
+      );
     } catch (error) {
       console.error("Error submitting feedback:", error);
     }
@@ -96,6 +101,25 @@ export default function Chat() {
               <div
                 dangerouslySetInnerHTML={renderMarkdown(m.message_content)}
               />
+              {m.isAi && m.feedback == null && (
+                <div className="inline-block ml-2">
+                  <button
+                    className="mr-2"
+                    onClick={() => handleFeedback(m.id!, true)}
+                  >
+                    👍
+                  </button>
+                  <button onClick={() => handleFeedback(m.id!, false)}>
+                    👎
+                  </button>
+                </div>
+              )}
+              {m.isAi && m.feedback != null && m.feedback.isLiked && (
+                <div>👍</div>
+              )}
+              {m.isAi && m.feedback != null && !m.feedback.isLiked && (
+                <div> 👎</div>
+              )}
             </div>
           ))}
           {messages.map((m, i) => (
@@ -106,7 +130,9 @@ export default function Chat() {
               }`}
             >
               {m.role === "user" ? "User: " : "AI: "}
-              {m.content as string}
+              <div
+                dangerouslySetInnerHTML={renderMarkdown(m.content as string)}
+              ></div>
               {m.role === "assistant" && (
                 <div className="inline-block ml-2">
                   <button

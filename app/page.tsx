@@ -6,7 +6,6 @@ import { continueConversation } from "./actions";
 import { readStreamableValue } from "ai/rsc";
 import { useRouter } from "next/navigation";
 import axios from "axios";
-import Markdown from "react-markdown";
 import History from "@/components/history";
 
 // Force the page to be dynamic and allow streaming responses up to 30 seconds
@@ -58,19 +57,6 @@ export default function Chat() {
     router.push(`/chat/${sessionId}`, { scroll: false });
   };
 
-  const handleFeedback = async (messageId: number, isLiked: boolean) => {
-    try {
-      await axios.post("/api/feedback", { body: { messageId, isLiked } });
-      // Update the local state to reflect the feedback
-      setMessages(
-        messages.map((m) =>
-          m.id === messageId ? { ...m, feedback: isLiked } : m
-        )
-      );
-    } catch (error) {
-      console.error("Error submitting feedback:", error);
-    }
-  };
   return (
     <div className="flex justify-between">
       <History />
@@ -79,17 +65,6 @@ export default function Chat() {
           <div key={i} className="whitespace-pre-wrap">
             {m.role === "user" ? "User: " : "AI: "}
             {m.content as string}
-            {m.role === "assistant" && (
-              <div className="inline-block ml-2">
-                <button
-                  className="mr-2"
-                  onClick={() => handleFeedback(m.id!, true)}
-                >
-                  👍
-                </button>
-                <button onClick={() => handleFeedback(m.id!, false)}>👎</button>
-              </div>
-            )}
           </div>
         ))}
         <form onSubmit={handleSubmit}>
