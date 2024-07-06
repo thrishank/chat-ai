@@ -87,82 +87,84 @@ export default function Chat() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-100">
-      <History />
-      <div className="flex-grow flex flex-col">
-        <div className="flex-grow overflow-y-auto p-4 space-y-4">
-          {history.map((m, i) => (
-            <div
-              key={i}
-              className={`p-3 rounded-lg shadow ${getMessageStyle(
-                m.isAi ? "assistant" : "user"
-              )}`}
-            >
+    <div className="flex h-screen bg-gray-100 justify-center">
+      <div className="flex w-full max-w-4xl px-4">
+        <History />
+        <div className="flex-grow flex flex-col ml-4 max-w-3xl">
+          <div className="flex-grow overflow-y-auto p-4 space-y-4">
+            {history.map((m, i) => (
               <div
-                dangerouslySetInnerHTML={renderMarkdown(m.message_content)}
-              />
-              {m.isAi && m.feedback == null && (
-                <div className="space-x-2">
-                  <button
-                    className="mr-2"
-                    onClick={() => handleFeedback(m.id!, true)}
-                  >
-                    ✅
-                  </button>
-                  <button onClick={() => handleFeedback(m.id!, false)}>
-                    ❌
-                  </button>
-                </div>
-              )}
-              {m.isAi && m.feedback != null && m.feedback.isLiked && (
-                <div>✅</div>
-              )}
-              {m.isAi && m.feedback != null && !m.feedback.isLiked && (
-                <div> ❌</div>
-              )}
-            </div>
-          ))}
-          {messages.map((m, i) => (
-            <div
-              key={i}
-              className={`p-3 rounded-lg shadow ${getMessageStyle(m.role)}`}
-            >
+                key={i}
+                className={`p-3 rounded-lg shadow ${getMessageStyle(
+                  m.isAi ? "assistant" : "user"
+                )}`}
+              >
+                <div
+                  dangerouslySetInnerHTML={renderMarkdown(m.message_content)}
+                />
+                {m.isAi && m.feedback == null && (
+                  <div className="space-x-2">
+                    <button
+                      className="mr-2"
+                      onClick={() => handleFeedback(m.id!, true)}
+                    >
+                      ✅
+                    </button>
+                    <button onClick={() => handleFeedback(m.id!, false)}>
+                      ❌
+                    </button>
+                  </div>
+                )}
+                {m.isAi && m.feedback != null && m.feedback.isLiked && (
+                  <div>✅</div>
+                )}
+                {m.isAi && m.feedback != null && !m.feedback.isLiked && (
+                  <div> ❌</div>
+                )}
+              </div>
+            ))}
+            {messages.map((m, i) => (
               <div
-                dangerouslySetInnerHTML={renderMarkdown(m.content as string)}
-              />
-              {m.role === "assistant" && (
-                <div className="inline-block ml-2">
-                  <button
-                    className="mr-2"
-                    onClick={() => handleFeedback(m.id!, true)}
-                  >
-                    ✅
-                  </button>
-                  <button onClick={() => handleFeedback(m.id!, false)}>
-                    ❌
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
-          <div ref={messagesEndRef} />
-        </div>
-        <form onSubmit={handleSubmit} className="p-4 bg-white shadow-md">
-          <div className="flex items-center">
-            <input
-              className="flex-grow p-2 border border-gray-300 rounded-l-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={input}
-              placeholder="Type your message..."
-              onChange={(e) => setInput(e.target.value)}
-            />
-            <button
-              type="submit"
-              className="bg-blue-500 text-white p-2 rounded-r-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              Send
-            </button>
+                key={i}
+                className={`p-3 rounded-lg shadow ${getMessageStyle(m.role)}`}
+              >
+                <div
+                  dangerouslySetInnerHTML={renderMarkdown(m.content as string)}
+                />
+                {m.role === "assistant" && (
+                  <div className="inline-block ml-2">
+                    <button
+                      className="mr-2"
+                      onClick={() => handleFeedback(m.id!, true)}
+                    >
+                      ✅
+                    </button>
+                    <button onClick={() => handleFeedback(m.id!, false)}>
+                      ❌
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+            <div ref={messagesEndRef} />
           </div>
-        </form>
+          <form onSubmit={handleSubmit} className="p-4 bg-white shadow-md">
+            <div className="flex items-center">
+              <input
+                className="flex-grow p-2 border border-gray-300 rounded-l-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={input}
+                placeholder="Type your message..."
+                onChange={(e) => setInput(e.target.value)}
+              />
+              <button
+                type="submit"
+                className="bg-blue-500 text-white p-2 rounded-r-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                Send
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
