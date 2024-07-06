@@ -12,16 +12,19 @@ export async function continueConversation(
   sessionId: string
 ) {
   const msg = await prisma.message.create({
+    // Storing the client Prompt to the database
     data: {
       message_content: JSON.stringify(messages[0].content),
       sessionId,
     },
   });
+
   const result = await streamText({
-    model: google("models/gemini-1.5-flash-latest"),
+    model: google("models/gemini-1.5-flash-latest"), // calling the google gemini API
     messages,
     async onFinish({ text }) {
       await prisma.message.create({
+        // storing the AI response to the DB
         data: {
           message_content: text,
           isAi: true,

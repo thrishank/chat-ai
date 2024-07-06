@@ -1,36 +1,22 @@
 "use client";
-
-import { type CoreMessage } from "ai";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { readStreamableValue } from "ai/rsc";
 import { useParams } from "next/navigation";
 import axios from "axios";
 import { continueConversation } from "@/app/actions";
 import { marked } from "marked";
 import History from "@/components/history";
+import { ExtendedMessage, typeHistory } from "@/utils/types";
 
 // Force the page to be dynamic and allow streaming responses up to 30 seconds
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
-interface typeHistory {
-  id: number;
-  message_content: string;
-  isAi: boolean;
-  feedback: {
-    id: number;
-    isLiked: boolean;
-  };
-}
-type ExtendedMessage = CoreMessage & {
-  id?: number;
-  feedback?: boolean;
-};
-
 export default function Chat() {
   const [messages, setMessages] = useState<ExtendedMessage[]>([]);
   const [input, setInput] = useState("");
   const [history, setHistory] = useState<typeHistory[]>([]);
+  const messagesEndRef = useRef<null | HTMLDivElement>(null);
 
   const params = useParams();
   const sessionId = params.slug;
@@ -41,7 +27,11 @@ export default function Chat() {
     });
   }, [sessionId]);
 
-  const handleSubmit = async (e: any) => {
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const newMessages: ExtendedMessage[] = [
       ...messages,
@@ -53,20 +43,25 @@ export default function Chat() {
 
     setMessages(newMessages);
     setInput("");
-
-    const result = await continueConversation(newMessages, sessionId as string);
-    for await (const content of readStreamableValue(result.message)) {
-      setMessages([
-        ...newMessages,
-        {
-          id: result.id,
-          role: "assistant",
-          content: content as string,
-        },
-      ]);
+    try {
+      const result = await continueConversation(
+        newMessages,
+        sessionId as string
+      );
+      for await (const content of readStreamableValue(result.message)) {
+        setMessages([
+          ...newMessages,
+          {
+            id: result.id,
+            role: "assistant",
+            content: content as string,
+          },
+        ]);
+      }
+    } catch (err) {
+      console.log(err);
     }
   };
-
   const renderMarkdown = (content: string) => {
     return { __html: marked(content) };
   };
@@ -85,77 +80,88 @@ export default function Chat() {
     }
   };
 
-  return (
-    <div className="flex justify-between">
-      <History />
+  const getMessageStyle = (role: string) => {
+    return role === "user"
+      ? "bg-blue-100 text-right rounded-br-none"
+      : "bg-gray-100 text-left rounded-bl-none";
+  };
 
-      <div className="flex flex-col justify-center w-full max-w-4xl py-24 mx-auto stretch">
-        <div className="px-4">
+  return (
+    <div className="flex h-screen bg-gray-100">
+      <History />
+      <div className="flex-grow flex flex-col">
+        <div className="flex-grow overflow-y-auto p-4 space-y-4">
           {history.map((m, i) => (
             <div
               key={i}
-              className={`whitespace-pre-wrap ${
-                m.isAi ? `text-normal` : `text-right`
-              }`}
+              className={`p-3 rounded-lg shadow ${getMessageStyle(
+                m.isAi ? "assistant" : "user"
+              )}`}
             >
               <div
                 dangerouslySetInnerHTML={renderMarkdown(m.message_content)}
               />
               {m.isAi && m.feedback == null && (
-                <div className="inline-block ml-2">
+                <div className="space-x-2">
                   <button
                     className="mr-2"
                     onClick={() => handleFeedback(m.id!, true)}
                   >
-                    👍
+                    ✅
                   </button>
                   <button onClick={() => handleFeedback(m.id!, false)}>
-                    👎
+                    ❌
                   </button>
                 </div>
               )}
               {m.isAi && m.feedback != null && m.feedback.isLiked && (
-                <div>👍</div>
+                <div>✅</div>
               )}
               {m.isAi && m.feedback != null && !m.feedback.isLiked && (
-                <div> 👎</div>
+                <div> ❌</div>
               )}
             </div>
           ))}
           {messages.map((m, i) => (
             <div
               key={i}
-              className={`whitespace-pre-wrap ${
-                m.role === "user" ? `text-right` : `text-normal`
-              }`}
+              className={`p-3 rounded-lg shadow ${getMessageStyle(m.role)}`}
             >
-              {m.role === "user" ? "User: " : "AI: "}
               <div
                 dangerouslySetInnerHTML={renderMarkdown(m.content as string)}
-              ></div>
+              />
               {m.role === "assistant" && (
                 <div className="inline-block ml-2">
                   <button
                     className="mr-2"
                     onClick={() => handleFeedback(m.id!, true)}
                   >
-                    👍
+                    ✅
                   </button>
                   <button onClick={() => handleFeedback(m.id!, false)}>
-                    👎
+                    ❌
                   </button>
                 </div>
               )}
             </div>
           ))}
+          <div ref={messagesEndRef} />
         </div>
-        <form onSubmit={handleSubmit} className="flex justify-center">
-          <input
-            className="fixed bottom-0 w-full max-w-md p-2 mb-8 border border-gray-300 rounded shadow-xl text-black "
-            value={input}
-            placeholder="Say something..."
-            onChange={(e) => setInput(e.target.value)}
-          />
+        <form onSubmit={handleSubmit} className="p-4 bg-white shadow-md">
+          <div className="flex items-center">
+            <input
+              className="flex-grow p-2 border border-gray-300 rounded-l-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={input}
+              placeholder="Type your message..."
+              onChange={(e) => setInput(e.target.value)}
+            />
+            <button
+              type="submit"
+              className="bg-blue-500 text-white p-2 rounded-r-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              Send
+            </button>
+          </div>
         </form>
       </div>
     </div>

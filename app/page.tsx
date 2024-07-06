@@ -1,21 +1,17 @@
 "use client";
 
-import { type CoreMessage } from "ai";
 import { useEffect, useState } from "react";
 import { continueConversation } from "./actions";
 import { readStreamableValue } from "ai/rsc";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import History from "@/components/history";
+import { ExtendedMessage } from "@/utils/types";
+import { marked } from "marked";
 
 // Force the page to be dynamic and allow streaming responses up to 30 seconds
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
-
-type ExtendedMessage = CoreMessage & {
-  id?: number;
-  feedback?: boolean;
-};
 
 export default function Chat() {
   const [messages, setMessages] = useState<ExtendedMessage[]>([]);
@@ -29,6 +25,10 @@ export default function Chat() {
       setSessionId(res.data.id);
     });
   }, []);
+
+  const renderMarkdown = (content: string) => {
+    return { __html: marked(content) };
+  };
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
@@ -64,7 +64,10 @@ export default function Chat() {
         {messages.map((m, i) => (
           <div key={i} className="whitespace-pre-wrap">
             {m.role === "user" ? "User: " : "AI: "}
-            {m.content as string}
+
+            <div
+              dangerouslySetInnerHTML={renderMarkdown(m.content as string)}
+            />
           </div>
         ))}
         <form onSubmit={handleSubmit}>
